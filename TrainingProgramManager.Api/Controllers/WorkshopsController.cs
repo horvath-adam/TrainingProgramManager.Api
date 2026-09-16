@@ -16,6 +16,7 @@ namespace TrainingProgramManager.Api.Controllers
         ];
 
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAll([FromQuery] string? tag = null)
         {
             if (string.IsNullOrWhiteSpace(tag))
@@ -31,6 +32,8 @@ namespace TrainingProgramManager.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetById(int id)
         {
             var workshop = Workshops.FirstOrDefault(w => w.Id == id);
