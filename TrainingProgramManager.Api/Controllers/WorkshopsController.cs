@@ -16,9 +16,18 @@ namespace TrainingProgramManager.Api.Controllers
         ];
 
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult Get([FromQuery] string? tag = null)
         {
-            return Ok(Workshops);
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                return Ok(Workshops);
+            }
+
+            var filtered = Workshops
+                .Where(w => string.Equals(w.Category, tag, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            return Ok(filtered);
         }
 
         [HttpGet("{id:int}")]
