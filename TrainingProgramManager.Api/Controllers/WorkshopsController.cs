@@ -16,7 +16,7 @@ namespace TrainingProgramManager.Api.Controllers
         ];
 
         [HttpGet]
-        public IActionResult Get([FromQuery] string? tag = null)
+        public IActionResult GetAll([FromQuery] string? tag = null)
         {
             if (string.IsNullOrWhiteSpace(tag))
             {
