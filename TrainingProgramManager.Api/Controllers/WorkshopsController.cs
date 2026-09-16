@@ -20,5 +20,18 @@ namespace TrainingProgramManager.Api.Controllers
         {
             return Ok(Workshops);
         }
+
+        [HttpGet("{id:int}")]
+        public IActionResult GetById(int id)
+        {
+            var workshop = Workshops.FirstOrDefault(w => w.Id == id);
+
+            if (workshop is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(workshop);
+        }
     }
 }
