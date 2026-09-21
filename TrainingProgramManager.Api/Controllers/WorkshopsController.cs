@@ -8,6 +8,8 @@ namespace TrainingProgramManager.Api.Controllers
     {
         public record WorkshopItem(int Id, string Title, string Tag);
 
+        public record CreateWorkshopRequest(string Title, string Tag);
+
         private static readonly List<WorkshopItem> Workshops =
         [
             new WorkshopItem(1, "ASP.NET Core alapok", "backend"),
@@ -44,6 +46,18 @@ namespace TrainingProgramManager.Api.Controllers
             }
 
             return Ok(workshop);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        public IActionResult Create([FromBody] CreateWorkshopRequest request)
+        {
+            var nextId = Workshops.Count == 0 ? 1 : Workshops.Max(w => w.Id) + 1;
+            var workshop = new WorkshopItem(nextId, request.Title, request.Tag);
+
+            Workshops.Add(workshop);
+
+            return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, workshop);
         }
     }
 }
