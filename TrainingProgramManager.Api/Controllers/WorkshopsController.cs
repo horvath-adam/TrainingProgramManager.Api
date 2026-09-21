@@ -6,7 +6,7 @@ namespace TrainingProgramManager.Api.Controllers
     [Route("api/[controller]")]
     public class WorkshopsController : ControllerBase
     {
-        public record WorkshopItem(int Id, string Title, string Category);
+        public record WorkshopItem(int Id, string Title, string Tag);
 
         private static readonly List<WorkshopItem> Workshops =
         [
@@ -25,7 +25,7 @@ namespace TrainingProgramManager.Api.Controllers
             }
 
             var filtered = Workshops
-                .Where(w => string.Equals(w.Category, tag, StringComparison.OrdinalIgnoreCase))
+                .Where(w => string.Equals(w.Tag, tag, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             return Ok(filtered);
