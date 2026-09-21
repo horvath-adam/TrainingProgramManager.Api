@@ -78,5 +78,22 @@ namespace TrainingProgramManager.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult Delete(int id)
+        {
+            var workshop = Workshops.FirstOrDefault(w => w.Id == id);
+
+            if (workshop is null)
+            {
+                return NotFound();
+            }
+
+            Workshops.Remove(workshop);
+
+            return NoContent();
+        }
     }
 }
