@@ -15,15 +15,16 @@ namespace TrainingProgramManager.Api.Controllers
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult GetAll([FromQuery] string? tag = null)
+        public ActionResult<IEnumerable<WorkshopResponse>> GetAll([FromQuery] string? tag = null)
         {
             if (string.IsNullOrWhiteSpace(tag))
             {
-                return Ok(Workshops);
+                return Ok(Workshops.Select(ToResponse));
             }
 
             var filtered = Workshops
                 .Where(w => string.Equals(w.Tag, tag, StringComparison.OrdinalIgnoreCase))
+                .Select(ToResponse)
                 .ToList();
 
             return Ok(filtered);
@@ -32,7 +33,7 @@ namespace TrainingProgramManager.Api.Controllers
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetById(int id)
+        public ActionResult<WorkshopResponse> GetById(int id)
         {
             var workshop = Workshops.FirstOrDefault(w => w.Id == id);
 
@@ -41,19 +42,19 @@ namespace TrainingProgramManager.Api.Controllers
                 return NotFound();
             }
 
-            return Ok(workshop);
+            return Ok(ToResponse(workshop));
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        public IActionResult Create([FromBody] CreateWorkshopRequest request)
+        public ActionResult<WorkshopResponse> Create([FromBody] CreateWorkshopRequest request)
         {
             var nextId = Workshops.Count == 0 ? 1 : Workshops.Max(w => w.Id) + 1;
             var workshop = new WorkshopItem(nextId, request.Title, request.Tag);
 
             Workshops.Add(workshop);
 
-            return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, workshop);
+            return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, ToResponse(workshop));
         }
 
         [HttpPut("{id:int}")]
