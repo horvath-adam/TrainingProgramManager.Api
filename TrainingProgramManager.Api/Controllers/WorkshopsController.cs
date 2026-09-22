@@ -6,12 +6,6 @@ namespace TrainingProgramManager.Api.Controllers
     [Route("api/[controller]")]
     public class WorkshopsController : ControllerBase
     {
-        private sealed record WorkshopItem(int Id, string Title, string Tag);
-
-        public sealed record CreateWorkshopRequest(string Title, string Tag);
-
-        public sealed record UpdateWorkshopRequest(string Title, string Tag);
-
         private static readonly List<WorkshopItem> Workshops =
         [
             new WorkshopItem(1, "ASP.NET Core alapok", "backend"),
@@ -95,5 +89,16 @@ namespace TrainingProgramManager.Api.Controllers
 
             return NoContent();
         }
+
+        private static WorkshopResponse ToResponse(WorkshopItem workshop) =>
+            new(workshop.Id, workshop.Title, workshop.Tag);
+
+        private sealed record WorkshopItem(int Id, string Title, string Tag);
+
+        public sealed record CreateWorkshopRequest(string Title, string Tag);
+
+        public sealed record UpdateWorkshopRequest(string Title, string Tag);
+
+        public sealed record WorkshopResponse(int Id, string Title, string Tag);
     }
 }
