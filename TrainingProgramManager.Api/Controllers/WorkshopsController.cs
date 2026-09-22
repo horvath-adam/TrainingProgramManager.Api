@@ -6,11 +6,11 @@ namespace TrainingProgramManager.Api.Controllers
     [Route("api/[controller]")]
     public class WorkshopsController : ControllerBase
     {
-        public record WorkshopItem(int Id, string Title, string Tag);
+        private sealed record WorkshopItem(int Id, string Title, string Tag);
 
-        public record CreateWorkshopRequest(string Title, string Tag);
+        public sealed record CreateWorkshopRequest(string Title, string Tag);
 
-        public record UpdateWorkshopRequest(string Title, string Tag);
+        public sealed record UpdateWorkshopRequest(string Title, string Tag);
 
         private static readonly List<WorkshopItem> Workshops =
         [
