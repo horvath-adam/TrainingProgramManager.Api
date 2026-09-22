@@ -10,6 +10,8 @@ namespace TrainingProgramManager.Api.Controllers
 
         public record CreateWorkshopRequest(string Title, string Tag);
 
+        public record UpdateWorkshopRequest(string Title, string Tag);
+
         private static readonly List<WorkshopItem> Workshops =
         [
             new WorkshopItem(1, "ASP.NET Core alapok", "backend"),
@@ -58,6 +60,23 @@ namespace TrainingProgramManager.Api.Controllers
             Workshops.Add(workshop);
 
             return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, workshop);
+        }
+
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult Update(int id, UpdateWorkshopRequest request)
+        {
+            var index = Workshops.FindIndex(w => w.Id == id);
+
+            if (index == -1)
+            {
+                return NotFound();
+            }
+
+            Workshops[index] = Workshops[index] with { Title = request.Title, Tag = request.Tag };
+
+            return NoContent();
         }
     }
 }
