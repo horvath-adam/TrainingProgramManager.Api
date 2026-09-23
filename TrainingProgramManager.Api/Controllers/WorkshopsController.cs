@@ -50,6 +50,11 @@ namespace TrainingProgramManager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public ActionResult<WorkshopResponse> Create([FromBody] CreateWorkshopRequest request)
         {
+            if (string.Equals(request.Tag, "archived", StringComparison.OrdinalIgnoreCase))
+            {
+                return Conflict("Archived tag cannot be used for new workshops.");
+            }
+
             var nextId = Workshops.Count == 0 ? 1 : Workshops.Max(w => w.Id) + 1;
             var workshop = new WorkshopItem(nextId, request.Title, request.Tag);
 
