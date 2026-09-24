@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using TrainingProgramManager.Api.Contracts.Workshops;
 
 namespace TrainingProgramManager.Api.Controllers
 {
@@ -101,29 +101,5 @@ namespace TrainingProgramManager.Api.Controllers
             new(workshop.Id, workshop.Title, workshop.Tag);
 
         private sealed record WorkshopItem(int Id, string Title, string Tag);
-
-        public sealed class CreateWorkshopRequest
-        {
-            [Required(ErrorMessage = "A workshop címe kötelező.")]
-            [StringLength(100, MinimumLength = 3, ErrorMessage = "A workshop címe 3 és 100 karakter között legyen.")]
-            public string Title { get; set; } = string.Empty;
-
-            [Required(ErrorMessage = "A címke megadása kötelező.")]
-            [StringLength(30, MinimumLength = 2, ErrorMessage = "A címke 2 és 30 karakter között legyen.")]
-            public string Tag { get; set; } = string.Empty;
-        }
-
-        public sealed class UpdateWorkshopRequest
-        {
-            [Required(ErrorMessage = "A workshop címe kötelező.")]
-            [StringLength(100, MinimumLength = 3, ErrorMessage = "A workshop címe 3 és 100 karakter között legyen.")]
-            public string Title { get; set; } = string.Empty;
-
-            [Required(ErrorMessage = "A címke megadása kötelező.")]
-            [StringLength(30, MinimumLength = 2, ErrorMessage = "A címke 2 és 30 karakter között legyen.")]
-            public string Tag { get; set; } = string.Empty;
-        }
-
-        public sealed record WorkshopResponse(int Id, string Title, string Tag);
     }
 }
