@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TrainingProgramManager.Api.Contracts.Workshops;
+using TrainingProgramManager.Api.Data;
+using TrainingProgramManager.Api.Entities;
 
 namespace TrainingProgramManager.Api.Controllers
 {
@@ -7,36 +10,35 @@ namespace TrainingProgramManager.Api.Controllers
     [Route("api/[controller]")]
     public class WorkshopsController : ControllerBase
     {
-        private static readonly List<WorkshopItem> Workshops =
-        [
-            new WorkshopItem(1, "ASP.NET Core alapok", "backend"),
-            new WorkshopItem(2, "EF Core bevezetés", "database"),
-            new WorkshopItem(3, "JWT authentication alapok", "security")
-        ];
+        private readonly TrainingProgramDbContext _dbContext;
+
+        public WorkshopsController(TrainingProgramDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<WorkshopResponse>> GetAll([FromQuery] string? tag = null)
+        public async Task<ActionResult<IEnumerable<WorkshopResponse>>> GetAll([FromQuery] string? tag = null)
         {
-            if (string.IsNullOrWhiteSpace(tag))
+            var query = _dbContext.Workshops.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(tag))
             {
-                return Ok(Workshops.Select(ToResponse));
+                query = query.Where(w => w.Tag.ToLower() == tag.ToLower());
             }
 
-            var filtered = Workshops
-                .Where(w => string.Equals(w.Tag, tag, StringComparison.OrdinalIgnoreCase))
-                .Select(ToResponse)
-                .ToList();
+            var workshops = await query.ToListAsync();
 
-            return Ok(filtered);
+            return Ok(workshops.Select(ToResponse));
         }
 
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<WorkshopResponse> GetById(int id)
+        public async Task<ActionResult<WorkshopResponse>> GetById(int id)
         {
-            var workshop = Workshops.FirstOrDefault(w => w.Id == id);
+            var workshop = await _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
 
             if (workshop is null)
             {
@@ -48,17 +50,17 @@ namespace TrainingProgramManager.Api.Controllers
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        public ActionResult<WorkshopResponse> Create([FromBody] CreateWorkshopRequest request)
+        public async Task<ActionResult<WorkshopResponse>> Create([FromBody] CreateWorkshopRequest request)
         {
             if (string.Equals(request.Tag, "archived", StringComparison.OrdinalIgnoreCase))
             {
                 return Conflict("Archived tag cannot be used for new workshops.");
             }
 
-            var nextId = Workshops.Count == 0 ? 1 : Workshops.Max(w => w.Id) + 1;
-            var workshop = new WorkshopItem(nextId, request.Title, request.Tag);
+            var workshop = new Workshop { Title = request.Title, Tag = request.Tag };
 
-            Workshops.Add(workshop);
+            _dbContext.Workshops.Add(workshop);
+            await _dbContext.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, ToResponse(workshop));
         }
@@ -66,16 +68,19 @@ namespace TrainingProgramManager.Api.Controllers
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Update(int id, UpdateWorkshopRequest request)
+        public async Task<IActionResult> Update(int id, UpdateWorkshopRequest request)
         {
-            var index = Workshops.FindIndex(w => w.Id == id);
+            var workshop = await _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
 
-            if (index == -1)
+            if (workshop is null)
             {
                 return NotFound();
             }
 
-            Workshops[index] = Workshops[index] with { Title = request.Title, Tag = request.Tag };
+            workshop.Title = request.Title;
+            workshop.Tag = request.Tag;
+
+            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }
@@ -83,23 +88,22 @@ namespace TrainingProgramManager.Api.Controllers
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var workshop = Workshops.FirstOrDefault(w => w.Id == id);
+            var workshop = await _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
 
             if (workshop is null)
             {
                 return NotFound();
             }
 
-            Workshops.Remove(workshop);
+            _dbContext.Workshops.Remove(workshop);
+            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private static WorkshopResponse ToResponse(WorkshopItem workshop) =>
+        private static WorkshopResponse ToResponse(Workshop workshop) =>
             new(workshop.Id, workshop.Title, workshop.Tag);
-
-        private sealed record WorkshopItem(int Id, string Title, string Tag);
     }
 }
