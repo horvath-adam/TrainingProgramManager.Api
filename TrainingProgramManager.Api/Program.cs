@@ -15,12 +15,9 @@ builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
 
 var app = builder.Build();
 
-// EN: EnsureCreatedAsync is a teaching shortcut for this module; migrations are covered later.
-// HU: Az EnsureCreatedAsync egy tanítási célú megoldás ebben a modulban, a migrációkról később lesz szó.
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TrainingProgramDbContext>();
-    await dbContext.Database.EnsureCreatedAsync();
 
     if (!await dbContext.Workshops.AnyAsync())
     {
