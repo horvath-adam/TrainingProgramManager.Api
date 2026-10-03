@@ -51,22 +51,7 @@ namespace TrainingProgramManager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<WorkshopDetailsResponse>> GetById(int id)
         {
-            var workshop = await _dbContext.Workshops
-                .AsNoTracking()
-                .Where(w => w.Id == id)
-                .Select(w => new WorkshopDetailsResponse(
-                    w.Id,
-                    w.Title,
-                    w.StartsAt,
-                    w.EndsAt,
-                    w.EventId,
-                    w.Event.Name,
-                    w.RoomId,
-                    w.Room.Name,
-                    w.SpeakerId,
-                    w.Speaker.FullName,
-                    w.Tags.OrderBy(t => t.Name).Select(t => t.Name).ToList()))
-                .FirstOrDefaultAsync();
+            var workshop = await GetDetailsAsync(id);
 
             if (workshop is null)
             {
@@ -102,7 +87,7 @@ namespace TrainingProgramManager.Api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<WorkshopResponse>> Create([FromBody] CreateWorkshopRequest request)
+        public async Task<ActionResult<WorkshopDetailsResponse>> Create([FromBody] CreateWorkshopRequest request)
         {
             if (!await ReferencedEntitiesExistAsync(request.EventId, request.RoomId, request.SpeakerId))
             {
@@ -122,7 +107,9 @@ namespace TrainingProgramManager.Api.Controllers
             _dbContext.Workshops.Add(workshop);
             await _dbContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, ToResponse(workshop));
+            var response = await GetDetailsAsync(workshop.Id);
+
+            return CreatedAtAction(nameof(GetById), new { id = workshop.Id }, response);
         }
 
         [HttpPut("{id:int}")]
@@ -180,7 +167,22 @@ namespace TrainingProgramManager.Api.Controllers
             return eventExists && roomExists && speakerExists;
         }
 
-        private static WorkshopResponse ToResponse(Workshop workshop) =>
-            new(workshop.Id, workshop.Title, workshop.EventId, workshop.RoomId, workshop.SpeakerId);
+        private Task<WorkshopDetailsResponse?> GetDetailsAsync(int id) =>
+            _dbContext.Workshops
+                .AsNoTracking()
+                .Where(w => w.Id == id)
+                .Select(w => new WorkshopDetailsResponse(
+                    w.Id,
+                    w.Title,
+                    w.StartsAt,
+                    w.EndsAt,
+                    w.EventId,
+                    w.Event.Name,
+                    w.RoomId,
+                    w.Room.Name,
+                    w.SpeakerId,
+                    w.Speaker.FullName,
+                    w.Tags.OrderBy(t => t.Name).Select(t => t.Name).ToList()))
+                .FirstOrDefaultAsync();
     }
 }
