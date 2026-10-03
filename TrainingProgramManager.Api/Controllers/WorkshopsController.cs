@@ -19,33 +19,61 @@ namespace TrainingProgramManager.Api.Controllers
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<WorkshopResponse>>> GetAll([FromQuery] int? eventId = null)
+        public async Task<ActionResult<IEnumerable<WorkshopListItemResponse>>> GetAll([FromQuery] int? eventId = null)
         {
-            var query = _dbContext.Workshops.AsQueryable();
+            // EN: AsNoTracking() states the read intent; the DTO projection itself does not create tracked entities.
+            // HU: Az AsNoTracking() jelzi az olvasási szándékot; a DTO projekció önmagában nem hoz létre követett entitásokat.
+            var query = _dbContext.Workshops.AsNoTracking();
 
             if (eventId is not null)
             {
                 query = query.Where(w => w.EventId == eventId);
             }
 
-            var workshops = await query.ToListAsync();
+            var workshops = await query
+                .Select(w => new WorkshopListItemResponse(
+                    w.Id,
+                    w.Title,
+                    w.StartsAt,
+                    w.EndsAt,
+                    w.Event.Name,
+                    w.Room.Name,
+                    w.Speaker.FullName))
+                .ToListAsync();
 
-            return Ok(workshops.Select(ToResponse));
+            // EN: The SQLite provider cannot translate ORDER BY on DateTimeOffset, so the small projected result is ordered in memory.
+            // HU: Az SQLite provider nem tudja lefordítani a DateTimeOffset szerinti ORDER BY-t, ezért a kis méretű projektált eredményt memóriában rendezzük.
+            return Ok(workshops.OrderBy(w => w.StartsAt).ThenBy(w => w.Id));
         }
 
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<WorkshopResponse>> GetById(int id)
+        public async Task<ActionResult<WorkshopDetailsResponse>> GetById(int id)
         {
-            var workshop = await _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
+            var workshop = await _dbContext.Workshops
+                .AsNoTracking()
+                .Where(w => w.Id == id)
+                .Select(w => new WorkshopDetailsResponse(
+                    w.Id,
+                    w.Title,
+                    w.StartsAt,
+                    w.EndsAt,
+                    w.EventId,
+                    w.Event.Name,
+                    w.RoomId,
+                    w.Room.Name,
+                    w.SpeakerId,
+                    w.Speaker.FullName,
+                    w.Tags.OrderBy(t => t.Name).Select(t => t.Name).ToList()))
+                .FirstOrDefaultAsync();
 
             if (workshop is null)
             {
                 return NotFound();
             }
 
-            return Ok(ToResponse(workshop));
+            return Ok(workshop);
         }
 
         [HttpGet("{id:int}/tags")]
@@ -61,9 +89,11 @@ namespace TrainingProgramManager.Api.Controllers
             }
 
             var tagNames = await _dbContext.Workshops
+                .AsNoTracking()
                 .Where(w => w.Id == id)
                 .SelectMany(w => w.Tags)
                 .Select(t => t.Name)
+                .OrderBy(name => name)
                 .ToListAsync();
 
             return Ok(tagNames);
