@@ -10,5 +10,14 @@ namespace TrainingProgramManager.Api.Services.Workshops
         Task<WorkshopDetailsResponse?> GetByIdAsync(int id);
 
         Task<IReadOnlyCollection<string>?> GetTagsAsync(int id);
+
+        Task<ServiceResult<WorkshopDetailsResponse>> CreateAsync(
+            CreateWorkshopRequest request);
+
+        Task<ServiceResult> UpdateAsync(
+            int id,
+            UpdateWorkshopRequest request);
+
+        Task<ServiceResult> DeleteAsync(int id);
     }
 }

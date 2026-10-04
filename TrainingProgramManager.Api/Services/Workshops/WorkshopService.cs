@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TrainingProgramManager.Api.Contracts.Workshops;
 using TrainingProgramManager.Api.Data;
+using TrainingProgramManager.Api.Entities;
 
 namespace TrainingProgramManager.Api.Services.Workshops
 {
@@ -61,6 +62,114 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 .Select(t => t.Name)
                 .OrderBy(name => name)
                 .ToListAsync();
+        }
+
+        public async Task<ServiceResult<WorkshopDetailsResponse>> CreateAsync(CreateWorkshopRequest request)
+        {
+            if (HasInvalidTimeRange(request.StartsAt, request.EndsAt))
+            {
+                return ServiceResult<WorkshopDetailsResponse>.Failure(
+                    "The workshop start time must be earlier than the end time.");
+            }
+
+            if (!await _dbContext.Events.AnyAsync(e => e.Id == request.EventId))
+            {
+                return ServiceResult<WorkshopDetailsResponse>.Failure("The selected event does not exist.");
+            }
+
+            if (!await _dbContext.Rooms.AnyAsync(r => r.Id == request.RoomId))
+            {
+                return ServiceResult<WorkshopDetailsResponse>.Failure("The selected room does not exist.");
+            }
+
+            if (!await _dbContext.Speakers.AnyAsync(s => s.Id == request.SpeakerId))
+            {
+                return ServiceResult<WorkshopDetailsResponse>.Failure("The selected speaker does not exist.");
+            }
+
+            if (await RoomHasOverlappingWorkshopAsync(request.RoomId, request.StartsAt, request.EndsAt))
+            {
+                return ServiceResult<WorkshopDetailsResponse>.Failure(
+                    "The selected room is already booked in this time period.");
+            }
+
+            var workshop = new Workshop
+            {
+                Title = request.Title,
+                EventId = request.EventId,
+                RoomId = request.RoomId,
+                SpeakerId = request.SpeakerId,
+                StartsAt = request.StartsAt,
+                EndsAt = request.EndsAt
+            };
+
+            _dbContext.Workshops.Add(workshop);
+            await _dbContext.SaveChangesAsync();
+
+            var response = await GetWorkshopDetailsByIdAsync(workshop.Id);
+
+            return ServiceResult<WorkshopDetailsResponse>.Success(response!);
+        }
+
+        public async Task<ServiceResult> UpdateAsync(int id, UpdateWorkshopRequest request)
+        {
+            if (HasInvalidTimeRange(request.StartsAt, request.EndsAt))
+            {
+                return ServiceResult.Failure("The workshop start time must be earlier than the end time.");
+            }
+
+            var workshop = await _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workshop is null)
+            {
+                return ServiceResult.Failure("Workshop not found.");
+            }
+
+            if (!await _dbContext.Events.AnyAsync(e => e.Id == request.EventId))
+            {
+                return ServiceResult.Failure("The selected event does not exist.");
+            }
+
+            if (!await _dbContext.Rooms.AnyAsync(r => r.Id == request.RoomId))
+            {
+                return ServiceResult.Failure("The selected room does not exist.");
+            }
+
+            if (!await _dbContext.Speakers.AnyAsync(s => s.Id == request.SpeakerId))
+            {
+                return ServiceResult.Failure("The selected speaker does not exist.");
+            }
+
+            if (await RoomHasOverlappingWorkshopAsync(request.RoomId, request.StartsAt, request.EndsAt, id))
+            {
+                return ServiceResult.Failure("The selected room is already booked in this time period.");
+            }
+
+            workshop.Title = request.Title;
+            workshop.EventId = request.EventId;
+            workshop.RoomId = request.RoomId;
+            workshop.SpeakerId = request.SpeakerId;
+            workshop.StartsAt = request.StartsAt;
+            workshop.EndsAt = request.EndsAt;
+
+            await _dbContext.SaveChangesAsync();
+
+            return ServiceResult.Success();
+        }
+
+        public async Task<ServiceResult> DeleteAsync(int id)
+        {
+            var workshop = await _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workshop is null)
+            {
+                return ServiceResult.Failure("Workshop not found.");
+            }
+
+            _dbContext.Workshops.Remove(workshop);
+            await _dbContext.SaveChangesAsync();
+
+            return ServiceResult.Success();
         }
 
         private static bool HasInvalidTimeRange(DateTimeOffset startsAt, DateTimeOffset endsAt) =>
