@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TrainingProgramManager.Api.Data;
 using TrainingProgramManager.Api.Entities;
+using TrainingProgramManager.Api.Services.Workshops;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IWorkshopService, WorkshopService>();
 
 var app = builder.Build();
 
