@@ -16,5 +16,9 @@ namespace TrainingProgramManager.Api.Contracts.Workshops
 
         [Range(1, int.MaxValue, ErrorMessage = "Az előadó azonosítója érvényes kell legyen.")]
         public int SpeakerId { get; set; }
+
+        public DateTimeOffset StartsAt { get; set; }
+
+        public DateTimeOffset EndsAt { get; set; }
     }
 }

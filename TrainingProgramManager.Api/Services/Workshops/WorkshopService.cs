@@ -63,6 +63,35 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 .ToListAsync();
         }
 
+        private static bool HasInvalidTimeRange(DateTimeOffset startsAt, DateTimeOffset endsAt) =>
+            startsAt >= endsAt;
+
+        private async Task<bool> RoomHasOverlappingWorkshopAsync(
+            int roomId,
+            DateTimeOffset startsAt,
+            DateTimeOffset endsAt,
+            int? ignoredWorkshopId = null)
+        {
+            var query = _dbContext.Workshops
+                .AsNoTracking()
+                .Where(w => w.RoomId == roomId);
+
+            if (ignoredWorkshopId is not null)
+            {
+                query = query.Where(w => w.Id != ignoredWorkshopId);
+            }
+
+            // EN: SQLite cannot compare DateTimeOffset in SQL, so only the small time-range projection is loaded and compared in memory.
+            // HU: Az SQLite nem tud DateTimeOffset értékeket SQL-ben összehasonlítani, ezért csak a kis időtartomány-projekciót töltjük be, és memóriában hasonlítjuk össze.
+            var candidates = await query
+                .Select(w => new { w.StartsAt, w.EndsAt })
+                .ToListAsync();
+
+            // EN: This check and the later SaveChangesAsync() are separate operations, so it is not a concurrency-safe booking guarantee.
+            // HU: Ez az ellenőrzés és a későbbi SaveChangesAsync() külön műveletek, ezért ez nem garantálja az egyidejű foglalások biztonságát.
+            return candidates.Any(w => w.StartsAt < endsAt && startsAt < w.EndsAt);
+        }
+
         private Task<WorkshopDetailsResponse?> GetWorkshopDetailsByIdAsync(int id) =>
             _dbContext.Workshops
                 .AsNoTracking()
