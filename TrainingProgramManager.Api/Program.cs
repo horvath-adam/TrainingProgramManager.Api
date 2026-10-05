@@ -23,7 +23,9 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<TrainingProgramDbContext>();
 
-    if (!await dbContext.Workshops.AnyAsync())
+    // EN: IgnoreQueryFilters() makes the seed guard see soft-deleted rows too, so seeding runs only when the table is physically empty.
+    // HU: Az IgnoreQueryFilters() miatt a seed ellenőrzés a soft delete-tel törölt sorokat is látja, így a seedelés csak fizikailag üres táblánál fut le.
+    if (!await dbContext.Workshops.IgnoreQueryFilters().AnyAsync())
     {
         var conferenceEvent = new Event { Name = "Dev Konferencia 2026" };
 
