@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TrainingProgramManager.Api.Contracts.Workshops;
 using TrainingProgramManager.Api.Data;
+using TrainingProgramManager.Api.Entities;
 
 namespace TrainingProgramManager.Api.Services.Workshops
 {
@@ -78,5 +79,51 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 .OrderBy(name => name)
                 .ToListAsync();
         }
+
+        // EN: The entity is intentionally tracked because the service will modify or remove it.
+        // HU: Az entitást szándékosan követjük, mert a service módosítani vagy törölni fogja.
+        public Task<Workshop?> GetEntityByIdAsync(int id) =>
+            _dbContext.Workshops.FirstOrDefaultAsync(w => w.Id == id);
+
+        public Task<bool> EventExistsAsync(int eventId) =>
+            _dbContext.Events.AnyAsync(e => e.Id == eventId);
+
+        public Task<bool> RoomExistsAsync(int roomId) =>
+            _dbContext.Rooms.AnyAsync(r => r.Id == roomId);
+
+        public Task<bool> SpeakerExistsAsync(int speakerId) =>
+            _dbContext.Speakers.AnyAsync(s => s.Id == speakerId);
+
+        public async Task<bool> RoomHasOverlappingWorkshopAsync(
+            int roomId,
+            DateTimeOffset startsAt,
+            DateTimeOffset endsAt,
+            int? ignoredWorkshopId = null)
+        {
+            var query = _dbContext.Workshops
+                .AsNoTracking()
+                .Where(w => w.RoomId == roomId);
+
+            if (ignoredWorkshopId is not null)
+            {
+                query = query.Where(w => w.Id != ignoredWorkshopId);
+            }
+
+            // EN: SQLite cannot compare DateTimeOffset in SQL, so only the small time-range projection is loaded and compared in memory.
+            // HU: Az SQLite nem tud DateTimeOffset értékeket SQL-ben összehasonlítani, ezért csak a kis időtartomány-projekciót töltjük be, és memóriában hasonlítjuk össze.
+            var candidates = await query
+                .Select(w => new { w.StartsAt, w.EndsAt })
+                .ToListAsync();
+
+            // EN: This check and the later SaveChangesAsync() are separate operations, so it is not a concurrency-safe booking guarantee.
+            // HU: Ez az ellenőrzés és a későbbi SaveChangesAsync() külön műveletek, ezért ez nem garantálja az egyidejű foglalások biztonságát.
+            return candidates.Any(w => w.StartsAt < endsAt && startsAt < w.EndsAt);
+        }
+
+        public void Add(Workshop workshop) => _dbContext.Workshops.Add(workshop);
+
+        public void Remove(Workshop workshop) => _dbContext.Workshops.Remove(workshop);
+
+        public Task SaveChangesAsync() => _dbContext.SaveChangesAsync();
     }
 }
