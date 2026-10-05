@@ -14,6 +14,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
 
 var app = builder.Build();
