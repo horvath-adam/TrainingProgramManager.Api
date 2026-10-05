@@ -67,6 +67,11 @@ namespace TrainingProgramManager.Api.Data
                 .HasMany(w => w.Tags)
                 .WithMany(t => t.Workshops);
 
+            // EN: Global query filter: normal Workshop queries automatically exclude soft-deleted rows.
+            // HU: Globális lekérdezési szűrő: a szokásos Workshop lekérdezések automatikusan kihagyják a soft delete-tel törölt sorokat.
+            modelBuilder.Entity<Workshop>()
+                .HasQueryFilter(w => !w.IsDeleted);
+
             base.OnModelCreating(modelBuilder);
         }
     }

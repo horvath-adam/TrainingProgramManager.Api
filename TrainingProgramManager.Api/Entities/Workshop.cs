@@ -10,6 +10,10 @@ namespace TrainingProgramManager.Api.Entities
 
         public DateTimeOffset EndsAt { get; set; }
 
+        public bool IsDeleted { get; set; }
+
+        public DateTimeOffset? DeletedAt { get; set; }
+
         public int EventId { get; set; }
 
         public Event Event { get; set; } = null!;
