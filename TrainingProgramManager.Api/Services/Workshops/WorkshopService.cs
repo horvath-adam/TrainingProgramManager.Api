@@ -127,7 +127,10 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 return ServiceResult.Failure("Workshop not found.");
             }
 
-            _workshopRepository.Remove(workshop);
+            // EN: Soft delete: mark the workshop as deleted instead of removing the row.
+            // HU: Soft delete: a sort nem töröljük, csak töröltnek jelöljük a workshopot.
+            workshop.IsDeleted = true;
+            workshop.DeletedAt = DateTimeOffset.UtcNow;
             await _workshopRepository.SaveChangesAsync();
 
             return ServiceResult.Success();
