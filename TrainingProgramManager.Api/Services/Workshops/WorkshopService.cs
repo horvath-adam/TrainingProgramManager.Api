@@ -26,29 +26,29 @@ namespace TrainingProgramManager.Api.Services.Workshops
             if (HasInvalidTimeRange(request.StartsAt, request.EndsAt))
             {
                 return ServiceResult<WorkshopDetailsResponse>.Failure(
-                    "The workshop start time must be earlier than the end time.");
+                    ServiceErrorType.Validation, "The workshop start time must be earlier than the end time.");
             }
 
             if (!await _workshopRepository.EventExistsAsync(request.EventId))
             {
-                return ServiceResult<WorkshopDetailsResponse>.Failure("The selected event does not exist.");
+                return ServiceResult<WorkshopDetailsResponse>.Failure(ServiceErrorType.Validation, "The selected event does not exist.");
             }
 
             if (!await _workshopRepository.RoomExistsAsync(request.RoomId))
             {
-                return ServiceResult<WorkshopDetailsResponse>.Failure("The selected room does not exist.");
+                return ServiceResult<WorkshopDetailsResponse>.Failure(ServiceErrorType.Validation, "The selected room does not exist.");
             }
 
             if (!await _workshopRepository.SpeakerExistsAsync(request.SpeakerId))
             {
-                return ServiceResult<WorkshopDetailsResponse>.Failure("The selected speaker does not exist.");
+                return ServiceResult<WorkshopDetailsResponse>.Failure(ServiceErrorType.Validation, "The selected speaker does not exist.");
             }
 
             if (await _workshopRepository.RoomHasOverlappingWorkshopAsync(
                 request.RoomId, request.StartsAt, request.EndsAt))
             {
                 return ServiceResult<WorkshopDetailsResponse>.Failure(
-                    "The selected room is already booked in this time period.");
+                    ServiceErrorType.Conflict, "The selected room is already booked in this time period.");
             }
 
             var workshop = new Workshop
@@ -75,35 +75,35 @@ namespace TrainingProgramManager.Api.Services.Workshops
         {
             if (HasInvalidTimeRange(request.StartsAt, request.EndsAt))
             {
-                return ServiceResult.Failure("The workshop start time must be earlier than the end time.");
+                return ServiceResult.Failure(ServiceErrorType.Validation, "The workshop start time must be earlier than the end time.");
             }
 
             var workshop = await _workshopRepository.GetEntityByIdAsync(id);
 
             if (workshop is null)
             {
-                return ServiceResult.Failure("Workshop not found.");
+                return ServiceResult.Failure(ServiceErrorType.NotFound, "Workshop not found.");
             }
 
             if (!await _workshopRepository.EventExistsAsync(request.EventId))
             {
-                return ServiceResult.Failure("The selected event does not exist.");
+                return ServiceResult.Failure(ServiceErrorType.Validation, "The selected event does not exist.");
             }
 
             if (!await _workshopRepository.RoomExistsAsync(request.RoomId))
             {
-                return ServiceResult.Failure("The selected room does not exist.");
+                return ServiceResult.Failure(ServiceErrorType.Validation, "The selected room does not exist.");
             }
 
             if (!await _workshopRepository.SpeakerExistsAsync(request.SpeakerId))
             {
-                return ServiceResult.Failure("The selected speaker does not exist.");
+                return ServiceResult.Failure(ServiceErrorType.Validation, "The selected speaker does not exist.");
             }
 
             if (await _workshopRepository.RoomHasOverlappingWorkshopAsync(
                 request.RoomId, request.StartsAt, request.EndsAt, id))
             {
-                return ServiceResult.Failure("The selected room is already booked in this time period.");
+                return ServiceResult.Failure(ServiceErrorType.Conflict, "The selected room is already booked in this time period.");
             }
 
             workshop.Title = request.Title;
@@ -124,7 +124,7 @@ namespace TrainingProgramManager.Api.Services.Workshops
 
             if (workshop is null)
             {
-                return ServiceResult.Failure("Workshop not found.");
+                return ServiceResult.Failure(ServiceErrorType.NotFound, "Workshop not found.");
             }
 
             // EN: Soft delete: mark the workshop as deleted instead of removing the row.
