@@ -11,6 +11,10 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// EN: Registers the services that produce standard RFC 9457 ProblemDetails responses.
+// HU: Regisztrálja a szabványos RFC 9457 ProblemDetails válaszokat előállító szolgáltatásokat.
+builder.Services.AddProblemDetails();
+
 builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -103,6 +107,12 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/openapi/v1.json", "TrainingProgramManager.Api v1");
     });
+}
+else
+{
+    // EN: Outside Development, unhandled exceptions are turned into ProblemDetails responses without leaking details.
+    // HU: Fejlesztési környezeten kívül a kezeletlen kivételek ProblemDetails válaszokká alakulnak részletek kiszivárogtatása nélkül.
+    app.UseExceptionHandler();
 }
 
 app.UseHttpsRedirection();
