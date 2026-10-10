@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TrainingProgramManager.Api.Data;
 using TrainingProgramManager.Api.Entities;
+using TrainingProgramManager.Api.Services.Auth;
 using TrainingProgramManager.Api.Services.Workshops;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
