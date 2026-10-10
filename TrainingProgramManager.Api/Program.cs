@@ -18,6 +18,19 @@ builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// EN: Registers the core Identity services (user management) backed by EF Core; no sign-in, roles or authentication yet.
+// HU: Regisztrálja az alap Identity szolgáltatásokat (felhasználókezelés) EF Core tárolással; bejelentkezés, szerepkörök és hitelesítés még nincs.
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = false;
+    })
+    .AddEntityFrameworkStores<TrainingProgramDbContext>();
+
 builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
 
