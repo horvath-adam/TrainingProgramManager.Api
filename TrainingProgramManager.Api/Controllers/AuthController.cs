@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TrainingProgramManager.Api.Contracts.Auth;
 using TrainingProgramManager.Api.Services.Auth;
@@ -51,6 +52,22 @@ namespace TrainingProgramManager.Api.Controllers
             }
 
             return Ok(result.Value);
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public IActionResult Me()
+        {
+            // EN: JWT bearer middleware has already validated the token; the endpoint only reads the claims of the authenticated principal.
+            // HU: A JWT bearer middleware már ellenőrizte a tokent; az endpoint csak a hitelesített principal claim-jeit olvassa.
+            return Ok(new
+            {
+                UserId = User.FindFirst("sub")?.Value,
+                Name = User.Identity?.Name,
+                Email = User.FindFirst("email")?.Value
+            });
         }
     }
 }
