@@ -35,6 +35,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var app = builder.Build();
 
