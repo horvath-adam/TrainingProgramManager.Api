@@ -34,5 +34,23 @@ namespace TrainingProgramManager.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("login")]
+        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+        {
+            var result = await _authService.LoginAsync(request);
+
+            if (!result.IsSuccess)
+            {
+                return Problem(
+                    title: "Login failed",
+                    detail: string.Join(" ", result.Errors),
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            return Ok(result.Value);
+        }
     }
 }
