@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using TrainingProgramManager.Api.Data;
 using TrainingProgramManager.Api.Entities;
 using TrainingProgramManager.Api.Services.Auth;
@@ -19,8 +22,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// EN: Registers the core Identity services (user management) backed by EF Core; no sign-in, roles or authentication yet.
-// HU: Regisztrálja az alap Identity szolgáltatásokat (felhasználókezelés) EF Core tárolással; bejelentkezés, szerepkörök és hitelesítés még nincs.
+// EN: Registers the core Identity services (user management) backed by EF Core; no sign-in or roles.
+// HU: Regisztrálja az alap Identity szolgáltatásokat (felhasználókezelés) EF Core tárolással; bejelentkezés és szerepkörök nincs.
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.User.RequireUniqueEmail = true;
@@ -31,6 +34,36 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Password.RequireNonAlphanumeric = false;
     })
     .AddEntityFrameworkStores<TrainingProgramDbContext>();
+
+// EN: JWT bearer is the default authentication scheme; incoming tokens are validated against the Jwt configuration section (teaching setup, not production).
+// HU: A JWT bearer az alapértelmezett hitelesítési séma; a bejövő tokenek ellenőrzése a Jwt konfigurációs szakasz alapján történik (oktatási beállítás, nem éles).
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+
+            ValidateLifetime = true,
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    builder.Configuration["Jwt:SecretKey"]!)),
+
+            NameClaimType = "name",
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
@@ -132,6 +165,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
