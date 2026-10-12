@@ -87,7 +87,9 @@ namespace TrainingProgramManager.Api.Services.Auth
                 return AuthResult<LoginResponse>.Failure(new[] { "Invalid email or password." });
             }
 
-            return AuthResult<LoginResponse>.Success(_jwtTokenService.CreateToken(user));
+            var response = await _jwtTokenService.CreateTokenAsync(user);
+
+            return AuthResult<LoginResponse>.Success(response);
         }
     }
 }

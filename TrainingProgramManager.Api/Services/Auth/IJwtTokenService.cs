@@ -5,6 +5,6 @@ namespace TrainingProgramManager.Api.Services.Auth
 {
     public interface IJwtTokenService
     {
-        LoginResponse CreateToken(ApplicationUser user);
+        Task<LoginResponse> CreateTokenAsync(ApplicationUser user);
     }
 }
