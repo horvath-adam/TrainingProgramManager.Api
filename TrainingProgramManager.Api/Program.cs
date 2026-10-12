@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TrainingProgramManager.Api.Data;
+using TrainingProgramManager.Api.Data.Seed;
 using TrainingProgramManager.Api.Entities;
 using TrainingProgramManager.Api.Services.Auth;
 using TrainingProgramManager.Api.Services.Workshops;
@@ -23,8 +24,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<TrainingProgramDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// EN: Registers the core Identity services (user management) backed by EF Core; no sign-in or roles.
-// HU: Regisztrálja az alap Identity szolgáltatásokat (felhasználókezelés) EF Core tárolással; bejelentkezés és szerepkörök nincs.
+// EN: Registers Identity user and role management backed by EF Core; authentication remains JWT bearer-based, without Identity cookie sign-in.
+// HU: Regisztrálja az Identity felhasználó- és szerepkörkezelést EF Core tárolással; a hitelesítés továbbra is JWT bearer alapú, Identity cookie-s bejelentkezés nélkül.
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.User.RequireUniqueEmail = true;
@@ -73,6 +74,30 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var app = builder.Build();
+
+// EN: Ensures the application roles exist before the app starts serving requests; safe to run on every startup.
+// HU: Gondoskodik róla, hogy az alkalmazás szerepkörei létezzenek, mielőtt az app kiszolgálja a kéréseket; minden indításkor biztonságosan futtatható.
+using (var roleScope = app.Services.CreateScope())
+{
+    var roleDbContext = roleScope.ServiceProvider.GetRequiredService<TrainingProgramDbContext>();
+
+    // EN: Roles are stored in the Identity tables, which exist only after the migrations were applied, so the seeder must not run on an outdated schema.
+    // HU: A szerepkörök az Identity táblákban tárolódnak, amelyek csak a migrációk alkalmazása után léteznek, ezért a seeder nem futhat elavult séma mellett.
+    // EN: The application only CHECKS migration readiness and never applies migrations itself: schema changes stay an explicit, deliberate step (dotnet ef database update).
+    // HU: Az alkalmazás csak ELLENŐRZI a migrációk állapotát, és sosem alkalmazza azokat: a sémamódosítás tudatos, explicit lépés marad (dotnet ef database update).
+    // EN: Startup stops with an error instead of continuing, because running against an outdated schema would fail later in less obvious ways.
+    // HU: Az indulás hibával leáll a folytatás helyett, mert elavult séma mellett a futás később, nehezebben érthető módon hibázna.
+    var pendingMigrations = (await roleDbContext.Database.GetPendingMigrationsAsync()).ToList();
+
+    if (pendingMigrations.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "The database has unapplied EF Core migrations: " + string.Join(", ", pendingMigrations) +
+            ". Apply the existing migrations explicitly (for example with 'dotnet ef database update') before starting the application.");
+    }
+
+    await IdentitySeeder.SeedRolesAsync(roleScope.ServiceProvider);
+}
 
 using (var scope = app.Services.CreateScope())
 {
