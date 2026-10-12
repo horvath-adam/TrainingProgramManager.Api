@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TrainingProgramManager.Api.Data;
@@ -33,6 +34,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Password.RequireLowercase = true;
         options.Password.RequireNonAlphanumeric = false;
     })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<TrainingProgramDbContext>();
 
 // EN: JWT bearer is the default authentication scheme; incoming tokens are validated against the Jwt configuration section (teaching setup, not production).
