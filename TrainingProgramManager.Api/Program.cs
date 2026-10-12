@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using TrainingProgramManager.Api.Data;
 using TrainingProgramManager.Api.Data.Seed;
 using TrainingProgramManager.Api.Entities;
+using TrainingProgramManager.Api.Security;
 using TrainingProgramManager.Api.Services.Auth;
 using TrainingProgramManager.Api.Services.Workshops;
 
@@ -66,7 +67,26 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+// EN: Authentication answers "who is the caller?" (the JWT bearer setup above); authorization answers "what may this caller do?" (the policies below).
+// HU: A hitelesítés azt válaszolja meg, hogy "ki a hívó?" (a fenti JWT bearer beállítás); az engedélyezés azt, hogy "mit tehet a hívó?" (az alábbi policy-k).
+builder.Services.AddAuthorization(options =>
+{
+    // EN: OrganizerOnly is role-based: only users in the Organizer role pass; Admin, Participant and Speaker alone do not.
+    // HU: Az OrganizerOnly szerepkör alapú: csak az Organizer szerepkörű felhasználók felelnek meg; az Admin, Participant vagy Speaker önmagában nem.
+    options.AddPolicy(AuthorizationPolicies.OrganizerOnly, policy =>
+        policy.RequireRole(ApplicationRoles.Organizer));
+
+    // EN: EventManagement needs an authenticated user in the Admin OR Organizer role; one RequireRole call with two names means "any of these roles", not "all of them".
+    // HU: Az EventManagement hitelesített felhasználót igényel Admin VAGY Organizer szerepkörrel; egyetlen RequireRole hívás két névvel azt jelenti, hogy "bármelyik", nem azt, hogy "mindkettő".
+    options.AddPolicy(AuthorizationPolicies.EventManagement, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole(ApplicationRoles.Admin, ApplicationRoles.Organizer));
+
+    // EN: VerifiedEmail is claim-based: it checks a specific fact about the user (email_verified = true), which is not a role; no such claim is issued yet, so nobody passes for now.
+    // HU: A VerifiedEmail claim alapú: a felhasználóról szóló konkrét tényt ellenőrzi (email_verified = true), ami nem szerepkör; ilyen claim még nem kerül kiadásra, ezért egyelőre senki sem felel meg.
+    options.AddPolicy(AuthorizationPolicies.VerifiedEmail, policy =>
+        policy.RequireClaim("email_verified", "true"));
+});
 
 builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
