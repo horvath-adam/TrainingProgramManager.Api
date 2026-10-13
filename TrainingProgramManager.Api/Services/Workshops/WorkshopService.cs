@@ -1,15 +1,18 @@
 using TrainingProgramManager.Api.Contracts.Workshops;
 using TrainingProgramManager.Api.Entities;
+using TrainingProgramManager.Api.Security;
 
 namespace TrainingProgramManager.Api.Services.Workshops
 {
     public class WorkshopService : IWorkshopService
     {
         private readonly IWorkshopRepository _workshopRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public WorkshopService(IWorkshopRepository workshopRepository)
+        public WorkshopService(IWorkshopRepository workshopRepository, ICurrentUserService currentUserService)
         {
             _workshopRepository = workshopRepository;
+            _currentUserService = currentUserService;
         }
 
         public Task<IReadOnlyCollection<WorkshopListItemResponse>> GetAllAsync(int? eventId = null) =>
@@ -58,7 +61,10 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 RoomId = request.RoomId,
                 SpeakerId = request.SpeakerId,
                 StartsAt = request.StartsAt,
-                EndsAt = request.EndsAt
+                EndsAt = request.EndsAt,
+                // EN: The owner is the authenticated current user taken from the validated JWT, never from the request, so a client cannot create workshops in someone else's name.
+                // HU: A tulajdonos a validált JWT-ből vett hitelesített aktuális felhasználó, soha nem a kérésből, így a kliens nem hozhat létre workshopot más nevében.
+                OrganizerId = _currentUserService.GetRequiredUserId()
             };
 
             // EN: The repository only tracks the entity; the service decides when to save.

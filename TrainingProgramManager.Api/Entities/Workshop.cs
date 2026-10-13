@@ -26,6 +26,12 @@ namespace TrainingProgramManager.Api.Entities
 
         public Speaker Speaker { get; set; } = null!;
 
+        // EN: Every workshop must have exactly one owner (an Identity user); the owner is always set by the server, never by the client.
+        // HU: Minden workshopnak pontosan egy tulajdonosa (Identity felhasználója) kell legyen; a tulajdonost mindig a szerver állítja be, soha nem a kliens.
+        public required string OrganizerId { get; set; }
+
+        public ApplicationUser Organizer { get; set; } = null!;
+
         public ICollection<Registration> Registrations { get; set; } = new List<Registration>();
 
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();

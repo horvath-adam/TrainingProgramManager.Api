@@ -68,6 +68,15 @@ namespace TrainingProgramManager.Api.Data
                 .HasMany(w => w.Tags)
                 .WithMany(t => t.Workshops);
 
+            // EN: ApplicationUser 1:N Workshop through Workshop.OrganizerId; Restrict prevents deleting a user who still owns workshops.
+            // HU: ApplicationUser 1:N Workshop kapcsolat a Workshop.OrganizerId mezőn keresztül; a Restrict megakadályozza, hogy olyan felhasználó törlődjön, akinek még vannak workshopjai.
+            modelBuilder.Entity<Workshop>()
+                .HasOne(w => w.Organizer)
+                .WithMany()
+                .HasForeignKey(w => w.OrganizerId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
             // EN: Global query filter: normal Workshop queries automatically exclude soft-deleted rows.
             // HU: Globális lekérdezési szűrő: a szokásos Workshop lekérdezések automatikusan kihagyják a soft delete-tel törölt sorokat.
             modelBuilder.Entity<Workshop>()

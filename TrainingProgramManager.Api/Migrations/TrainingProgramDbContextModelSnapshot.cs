@@ -360,6 +360,10 @@ namespace TrainingProgramManager.Api.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("OrganizerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("RoomId")
                         .HasColumnType("INTEGER");
 
@@ -376,6 +380,8 @@ namespace TrainingProgramManager.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EventId");
+
+                    b.HasIndex("OrganizerId");
 
                     b.HasIndex("RoomId");
 
@@ -477,6 +483,12 @@ namespace TrainingProgramManager.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TrainingProgramManager.Api.Entities.ApplicationUser", "Organizer")
+                        .WithMany()
+                        .HasForeignKey("OrganizerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("TrainingProgramManager.Api.Entities.Room", "Room")
                         .WithMany("Workshops")
                         .HasForeignKey("RoomId")
@@ -490,6 +502,8 @@ namespace TrainingProgramManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Event");
+
+                    b.Navigation("Organizer");
 
                     b.Navigation("Room");
 

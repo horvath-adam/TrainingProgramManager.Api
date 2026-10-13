@@ -130,6 +130,13 @@ using (var scope = app.Services.CreateScope())
     // HU: Az IgnoreQueryFilters() miatt a seed ellenőrzés a soft delete-tel törölt sorokat is látja, így a seedelés csak fizikailag üres táblánál fut le.
     if (!await dbContext.Workshops.IgnoreQueryFilters().AnyAsync())
     {
+        // EN: Workshops require an owner, so the demonstration data is owned by the real organizer@example.com Identity user; without that user seeding stops with a clear message.
+        // HU: A workshopoknak kell tulajdonos, ezért a demó adatok tulajdonosa a valódi organizer@example.com Identity felhasználó; ennek hiányában a seedelés érthető üzenettel leáll.
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var organizer = await userManager.FindByEmailAsync("organizer@example.com")
+            ?? throw new InvalidOperationException(
+                "The demonstration workshops need the Identity user 'organizer@example.com'. Register it with POST /api/auth/register and assign the Organizer role with POST /api/dev/make-organizer first.");
+
         var conferenceEvent = new Event { Name = "Dev Konferencia 2026" };
 
         var mainRoom = new Room { Name = "Nagyterem", Capacity = 120 };
@@ -150,6 +157,7 @@ using (var scope = app.Services.CreateScope())
             Event = conferenceEvent,
             Room = mainRoom,
             Speaker = kovacsSpeaker,
+            OrganizerId = organizer.Id,
             Tags = new List<Tag> { backendTag }
         };
 
@@ -161,6 +169,7 @@ using (var scope = app.Services.CreateScope())
             Event = conferenceEvent,
             Room = workshopRoom,
             Speaker = kovacsSpeaker,
+            OrganizerId = organizer.Id,
             Tags = new List<Tag> { backendTag, databaseTag }
         };
 
@@ -172,6 +181,7 @@ using (var scope = app.Services.CreateScope())
             Event = conferenceEvent,
             Room = workshopRoom,
             Speaker = nagySpeaker,
+            OrganizerId = organizer.Id,
             Tags = new List<Tag> { backendTag, securityTag }
         };
 

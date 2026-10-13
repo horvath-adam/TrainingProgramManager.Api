@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TrainingProgramManager.Api.Contracts.Workshops;
+using TrainingProgramManager.Api.Security;
 using TrainingProgramManager.Api.Services.Workshops;
 
 namespace TrainingProgramManager.Api.Controllers
@@ -54,6 +56,9 @@ namespace TrainingProgramManager.Api.Controllers
             return Ok(tagNames);
         }
 
+        // EN: Creating a workshop makes the caller its owner, so only users in the Organizer role may do it.
+        // HU: A workshop létrehozásával a hívó lesz a tulajdonosa, ezért csak az Organizer szerepkörű felhasználók tehetik meg.
+        [Authorize(Roles = ApplicationRoles.Organizer)]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
