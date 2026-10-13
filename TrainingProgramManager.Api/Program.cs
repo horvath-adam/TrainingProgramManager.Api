@@ -93,6 +93,9 @@ builder.Services.AddScoped<IWorkshopService, WorkshopService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
 var app = builder.Build();
 
 // EN: Ensures the application roles exist before the app starts serving requests; safe to run on every startup.
