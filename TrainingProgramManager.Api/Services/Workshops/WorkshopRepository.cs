@@ -44,6 +44,25 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 .ToList();
         }
 
+        // EN: The repository filters by OrganizerId in SQL, so only the owner's visible (not soft-deleted) workshops are loaded. The owner id is received from the service, never read from HttpContext.
+        // HU: A repository SQL-ben szűr az OrganizerId-ra, így csak a tulajdonos látható (nem soft delete-elt) workshopjai töltődnek be. A tulajdonos azonosítóját a service adja át, a repository nem olvassa HttpContext-ből.
+        // EN: Ordering by Id makes the result deterministic, which keeps demonstrations reproducible.
+        // HU: Az Id szerinti rendezés determinisztikussá teszi az eredményt, így a bemutatók megismételhetők.
+        public async Task<IReadOnlyCollection<WorkshopListItemResponse>> GetByOrganizerAsync(string organizerId) =>
+            await _dbContext.Workshops
+                .AsNoTracking()
+                .Where(w => w.OrganizerId == organizerId)
+                .OrderBy(w => w.Id)
+                .Select(w => new WorkshopListItemResponse(
+                    w.Id,
+                    w.Title,
+                    w.StartsAt,
+                    w.EndsAt,
+                    w.Event.Name,
+                    w.Room.Name,
+                    w.Speaker.FullName))
+                .ToListAsync();
+
         public Task<WorkshopDetailsResponse?> GetDetailsByIdAsync(int id) =>
             _dbContext.Workshops
                 .AsNoTracking()

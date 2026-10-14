@@ -18,6 +18,11 @@ namespace TrainingProgramManager.Api.Services.Workshops
         public Task<IReadOnlyCollection<WorkshopListItemResponse>> GetAllAsync(int? eventId = null) =>
             _workshopRepository.GetAllAsync(eventId);
 
+        // EN: The current user id is resolved here from the validated JWT, so a caller can never ask for another Organizer's workshops.
+        // HU: Az aktuális felhasználó azonosítóját itt a validált JWT-ből határozzuk meg, így a hívó soha nem kérheti másik szervező workshopjait.
+        public Task<IReadOnlyCollection<WorkshopListItemResponse>> GetMineAsync() =>
+            _workshopRepository.GetByOrganizerAsync(_currentUserService.GetRequiredUserId());
+
         public Task<WorkshopDetailsResponse?> GetByIdAsync(int id) =>
             _workshopRepository.GetDetailsByIdAsync(id);
 

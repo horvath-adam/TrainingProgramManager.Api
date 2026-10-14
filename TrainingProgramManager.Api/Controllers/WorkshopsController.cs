@@ -26,6 +26,20 @@ namespace TrainingProgramManager.Api.Controllers
             return Ok(workshops);
         }
 
+        // EN: Only Organizers own workshops, so only the Organizer role may list "my" workshops. The literal "mine" segment does not clash with the {id:int} route.
+        // HU: Csak a szervezők birtokolnak workshopokat, ezért csak az Organizer szerepkör listázhatja a "sajátjait". A "mine" szegmens nem ütközik a {id:int} útvonallal.
+        [Authorize(Roles = ApplicationRoles.Organizer)]
+        [HttpGet("mine")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<IEnumerable<WorkshopListItemResponse>>> GetMine()
+        {
+            var workshops = await _workshopService.GetMineAsync();
+
+            return Ok(workshops);
+        }
+
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
