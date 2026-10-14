@@ -84,16 +84,23 @@ namespace TrainingProgramManager.Api.Services.Workshops
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateWorkshopRequest request)
         {
-            if (HasInvalidTimeRange(request.StartsAt, request.EndsAt))
-            {
-                return ServiceResult.Failure(ServiceErrorType.Validation, "The workshop start time must be earlier than the end time.");
-            }
-
             var workshop = await _workshopRepository.GetEntityByIdAsync(id);
 
             if (workshop is null)
             {
                 return ServiceResult.Failure(ServiceErrorType.NotFound, "Workshop not found.");
+            }
+
+            // EN: Existence and ownership are checked before business validation, so a non-owner gets Forbidden instead of validation details about someone else's workshop.
+            // HU: A létezést és a tulajdonjogot az üzleti validáció előtt ellenőrizzük, így a nem tulajdonos Forbidden választ kap, és nem kap validációs részleteket más workshopjáról.
+            if (workshop.OrganizerId != _currentUserService.GetRequiredUserId())
+            {
+                return ServiceResult.Failure(ServiceErrorType.Forbidden, "You cannot modify this workshop.");
+            }
+
+            if (HasInvalidTimeRange(request.StartsAt, request.EndsAt))
+            {
+                return ServiceResult.Failure(ServiceErrorType.Validation, "The workshop start time must be earlier than the end time.");
             }
 
             if (!await _workshopRepository.EventExistsAsync(request.EventId))
@@ -136,6 +143,13 @@ namespace TrainingProgramManager.Api.Services.Workshops
             if (workshop is null)
             {
                 return ServiceResult.Failure(ServiceErrorType.NotFound, "Workshop not found.");
+            }
+
+            // EN: Soft delete is still a delete, so it must enforce ownership: an Organizer cannot remove another Organizer's workshop.
+            // HU: A soft delete is törlésnek számít, ezért érvényesíteni kell a tulajdonjogot: egy szervező nem törölheti másik szervező workshopját.
+            if (workshop.OrganizerId != _currentUserService.GetRequiredUserId())
+            {
+                return ServiceResult.Failure(ServiceErrorType.Forbidden, "You cannot delete this workshop.");
             }
 
             // EN: Soft delete: mark the workshop as deleted instead of removing the row.

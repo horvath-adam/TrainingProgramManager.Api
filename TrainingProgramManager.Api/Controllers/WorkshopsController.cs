@@ -89,9 +89,14 @@ namespace TrainingProgramManager.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
         }
 
+        // EN: The Organizer role is only the first gate; the service additionally checks that the caller owns this workshop.
+        // HU: Az Organizer szerepkör csak az első kapu; a service ezen felül ellenőrzi, hogy a hívó tulajdonosa-e a workshopnak.
+        [Authorize(Roles = ApplicationRoles.Organizer)]
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Update(int id, UpdateWorkshopRequest request)
@@ -106,8 +111,11 @@ namespace TrainingProgramManager.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = ApplicationRoles.Organizer)]
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
@@ -130,6 +138,7 @@ namespace TrainingProgramManager.Api.Controllers
                 ServiceErrorType.Validation => StatusCodes.Status400BadRequest,
                 ServiceErrorType.NotFound => StatusCodes.Status404NotFound,
                 ServiceErrorType.Conflict => StatusCodes.Status409Conflict,
+                ServiceErrorType.Forbidden => StatusCodes.Status403Forbidden,
                 _ => StatusCodes.Status500InternalServerError
             };
 
