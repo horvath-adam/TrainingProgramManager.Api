@@ -9,10 +9,16 @@ namespace TrainingProgramManager.Api.Services.Workshops
         private readonly IWorkshopRepository _workshopRepository;
         private readonly ICurrentUserService _currentUserService;
 
-        public WorkshopService(IWorkshopRepository workshopRepository, ICurrentUserService currentUserService)
+        private readonly ILogger<WorkshopService> _logger;
+
+        public WorkshopService(
+            IWorkshopRepository workshopRepository,
+            ICurrentUserService currentUserService,
+            ILogger<WorkshopService> logger)
         {
             _workshopRepository = workshopRepository;
             _currentUserService = currentUserService;
+            _logger = logger;
         }
 
         public Task<IReadOnlyCollection<WorkshopListItemResponse>> GetAllAsync(int? eventId = null) =>
@@ -79,6 +85,8 @@ namespace TrainingProgramManager.Api.Services.Workshops
 
             var response = await _workshopRepository.GetDetailsByIdAsync(workshop.Id);
 
+            _logger.LogInformation("Workshop {WorkshopId} created by user {UserId}.", workshop.Id, workshop.OrganizerId);
+
             return ServiceResult<WorkshopDetailsResponse>.Success(response!);
         }
 
@@ -93,8 +101,13 @@ namespace TrainingProgramManager.Api.Services.Workshops
 
             // EN: Existence and ownership are checked before business validation, so a non-owner gets Forbidden instead of validation details about someone else's workshop.
             // HU: A létezést és a tulajdonjogot az üzleti validáció előtt ellenőrizzük, így a nem tulajdonos Forbidden választ kap, és nem kap validációs részleteket más workshopjáról.
-            if (workshop.OrganizerId != _currentUserService.GetRequiredUserId())
+            var currentUserId = _currentUserService.GetRequiredUserId();
+
+            if (workshop.OrganizerId != currentUserId)
             {
+                _logger.LogWarning(
+                    "User {UserId} attempted to modify Workshop {WorkshopId} owned by another user.", currentUserId, id);
+
                 return ServiceResult.Failure(ServiceErrorType.Forbidden, "You cannot modify this workshop.");
             }
 
@@ -132,6 +145,8 @@ namespace TrainingProgramManager.Api.Services.Workshops
             workshop.EndsAt = request.EndsAt;
 
             await _workshopRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Workshop {WorkshopId} updated by user {UserId}.", workshop.Id, currentUserId);
 
             return ServiceResult.Success();
         }
