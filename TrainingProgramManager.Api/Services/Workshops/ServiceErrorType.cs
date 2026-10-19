@@ -8,6 +8,7 @@ namespace TrainingProgramManager.Api.Services.Workshops
         Validation,
         NotFound,
         Conflict,
-        Forbidden
+        Forbidden,
+        PersistenceFailure
     }
 }

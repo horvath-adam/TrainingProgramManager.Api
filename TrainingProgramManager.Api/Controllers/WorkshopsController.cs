@@ -77,6 +77,7 @@ namespace TrainingProgramManager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<WorkshopDetailsResponse>> Create([FromBody] CreateWorkshopRequest request)
         {
             var result = await _workshopService.CreateAsync(request);
@@ -139,6 +140,7 @@ namespace TrainingProgramManager.Api.Controllers
                 ServiceErrorType.NotFound => StatusCodes.Status404NotFound,
                 ServiceErrorType.Conflict => StatusCodes.Status409Conflict,
                 ServiceErrorType.Forbidden => StatusCodes.Status403Forbidden,
+                ServiceErrorType.PersistenceFailure => StatusCodes.Status500InternalServerError,
                 _ => StatusCodes.Status500InternalServerError
             };
 

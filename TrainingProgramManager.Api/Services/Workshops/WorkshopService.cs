@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TrainingProgramManager.Api.Contracts.Workshops;
 using TrainingProgramManager.Api.Entities;
 using TrainingProgramManager.Api.Security;
@@ -81,7 +82,20 @@ namespace TrainingProgramManager.Api.Services.Workshops
             // EN: The repository only tracks the entity; the service decides when to save.
             // HU: A repository csak követi az entitást; a service dönti el, mikor történik a mentés.
             _workshopRepository.Add(workshop);
-            await _workshopRepository.SaveChangesAsync();
+
+            try
+            {
+                await _workshopRepository.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // EN: The full exception stays in the server log; the caller only gets a generic message.
+                // HU: A teljes kivétel a szerver naplójában marad; a hívó csak általános üzenetet kap.
+                _logger.LogError(ex, "Database error while creating Workshop for user {UserId}.", workshop.OrganizerId);
+
+                return ServiceResult<WorkshopDetailsResponse>.Failure(
+                    ServiceErrorType.PersistenceFailure, "The workshop could not be created.");
+            }
 
             var response = await _workshopRepository.GetDetailsByIdAsync(workshop.Id);
 
