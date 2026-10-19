@@ -11,15 +11,18 @@ namespace TrainingProgramManager.Api.Services.Auth
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly TrainingProgramDbContext _dbContext;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
             IJwtTokenService jwtTokenService,
-            TrainingProgramDbContext dbContext)
+            TrainingProgramDbContext dbContext,
+            ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _jwtTokenService = jwtTokenService;
             _dbContext = dbContext;
+            _logger = logger;
         }
 
         public async Task<AuthResult> RegisterAsync(RegisterRequest request)
@@ -73,6 +76,8 @@ namespace TrainingProgramManager.Api.Services.Auth
             // HU: A CommitAsync csak akkor fut le, ha a felhasználó létrehozása ÉS a szerepkör kiosztása is sikerült; a módosítások csak ekkor válnak véglegessé. Ha kivételt dob, az továbbterjed, és sikert sosem jelzünk.
             await transaction.CommitAsync();
 
+            _logger.LogInformation("User {UserId} registered.", user.Id);
+
             return AuthResult.Success();
         }
 
@@ -84,10 +89,14 @@ namespace TrainingProgramManager.Api.Services.Auth
             // HU: Ismeretlen e-mail és hibás jelszó ugyanazt az üzenetet adja, így az API nem árulja el, mely e-mail címek regisztráltak.
             if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
             {
+                _logger.LogWarning("Failed login attempt.");
+
                 return AuthResult<LoginResponse>.Failure(new[] { "Invalid email or password." });
             }
 
             var response = await _jwtTokenService.CreateTokenAsync(user);
+
+            _logger.LogInformation("User {UserId} logged in successfully.", user.Id);
 
             return AuthResult<LoginResponse>.Success(response);
         }
