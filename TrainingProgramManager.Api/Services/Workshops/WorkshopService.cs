@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using TrainingProgramManager.Api.Contracts.Workshops;
 using TrainingProgramManager.Api.Entities;
 using TrainingProgramManager.Api.Security;
@@ -11,15 +12,18 @@ namespace TrainingProgramManager.Api.Services.Workshops
         private readonly ICurrentUserService _currentUserService;
 
         private readonly ILogger<WorkshopService> _logger;
+        private readonly IMemoryCache _memoryCache;
 
         public WorkshopService(
             IWorkshopRepository workshopRepository,
             ICurrentUserService currentUserService,
-            ILogger<WorkshopService> logger)
+            ILogger<WorkshopService> logger,
+            IMemoryCache memoryCache)
         {
             _workshopRepository = workshopRepository;
             _currentUserService = currentUserService;
             _logger = logger;
+            _memoryCache = memoryCache;
         }
 
         public Task<IReadOnlyCollection<WorkshopListItemResponse>> GetAllAsync(int? eventId = null) =>

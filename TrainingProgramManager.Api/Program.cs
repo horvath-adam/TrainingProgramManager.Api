@@ -88,6 +88,8 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("email_verified", "true"));
 });
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddScoped<IWorkshopRepository, WorkshopRepository>();
 builder.Services.AddScoped<IWorkshopService, WorkshopService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
