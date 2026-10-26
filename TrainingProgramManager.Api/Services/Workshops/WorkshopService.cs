@@ -190,6 +190,10 @@ namespace TrainingProgramManager.Api.Services.Workshops
 
             await _workshopRepository.SaveChangesAsync();
 
+            // EN: The cached public list is removed only after the update was saved, so it never serves data older than the database.
+            // HU: A gyorsítótárazott publikus listát csak a módosítás mentése után töröljük, így nem szolgál ki az adatbázisnál régebbi adatot.
+            _memoryCache.Remove(CacheKeys.PublicWorkshops);
+
             _logger.LogInformation("Workshop {WorkshopId} updated by user {UserId}.", workshop.Id, currentUserId);
 
             return ServiceResult.Success();
@@ -216,6 +220,10 @@ namespace TrainingProgramManager.Api.Services.Workshops
             workshop.IsDeleted = true;
             workshop.DeletedAt = DateTimeOffset.UtcNow;
             await _workshopRepository.SaveChangesAsync();
+
+            // EN: The soft-deleted workshop must disappear from the public list, so the cache is cleared after the successful save.
+            // HU: A soft delete-tel törölt workshopnak el kell tűnnie a publikus listából, ezért a gyorsítótárat a sikeres mentés után töröljük.
+            _memoryCache.Remove(CacheKeys.PublicWorkshops);
 
             return ServiceResult.Success();
         }
