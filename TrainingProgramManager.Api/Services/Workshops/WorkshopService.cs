@@ -123,6 +123,10 @@ namespace TrainingProgramManager.Api.Services.Workshops
                     ServiceErrorType.PersistenceFailure, "The workshop could not be created.");
             }
 
+            // EN: The cached public list is removed only after the new Workshop was saved, so a failed create never discards a still-valid cache entry.
+            // HU: A gyorsítótárazott publikus listát csak az új Workshop mentése után töröljük, így egy sikertelen létrehozás nem dob el még érvényes gyorsítótár-bejegyzést.
+            _memoryCache.Remove(CacheKeys.PublicWorkshops);
+
             var response = await _workshopRepository.GetDetailsByIdAsync(workshop.Id);
 
             _logger.LogInformation("Workshop {WorkshopId} created by user {UserId}.", workshop.Id, workshop.OrganizerId);
