@@ -44,6 +44,23 @@ namespace TrainingProgramManager.Api.Services.Workshops
                 .ToList();
         }
 
+        // EN: The global soft-delete query filter stays active (no IgnoreQueryFilters), and ordering plus DTO projection run in the database; only the read model is returned, never entities.
+        // HU: A globális soft delete query filter aktív marad (nincs IgnoreQueryFilters), a rendezés és a DTO projekció az adatbázisban fut; csak az olvasási modell kerül vissza, entitás soha.
+        public async Task<IReadOnlyCollection<WorkshopListItemResponse>> GetPublicListAsync() =>
+            await _dbContext.Workshops
+                .AsNoTracking()
+                .OrderBy(w => w.Title)
+                .ThenBy(w => w.Id)
+                .Select(w => new WorkshopListItemResponse(
+                    w.Id,
+                    w.Title,
+                    w.StartsAt,
+                    w.EndsAt,
+                    w.Event.Name,
+                    w.Room.Name,
+                    w.Speaker.FullName))
+                .ToListAsync();
+
         // EN: The repository filters by OrganizerId in SQL, so only the owner's visible (not soft-deleted) workshops are loaded. The owner id is received from the service, never read from HttpContext.
         // HU: A repository SQL-ben szűr az OrganizerId-ra, így csak a tulajdonos látható (nem soft delete-elt) workshopjai töltődnek be. A tulajdonos azonosítóját a service adja át, a repository nem olvassa HttpContext-ből.
         // EN: Ordering by Id makes the result deterministic, which keeps demonstrations reproducible.

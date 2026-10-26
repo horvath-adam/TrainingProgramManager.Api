@@ -7,6 +7,8 @@ namespace TrainingProgramManager.Api.Services.Workshops
         Task<IReadOnlyCollection<WorkshopListItemResponse>> GetAllAsync(
             int? eventId = null);
 
+        Task<IReadOnlyCollection<WorkshopListItemResponse>> GetPublicListAsync();
+
         Task<IReadOnlyCollection<WorkshopListItemResponse>> GetMineAsync();
 
         Task<WorkshopDetailsResponse?> GetByIdAsync(int id);

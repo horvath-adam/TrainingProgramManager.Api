@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TrainingProgramManager.Api.Caching;
 using Microsoft.Extensions.Caching.Memory;
 using TrainingProgramManager.Api.Contracts.Workshops;
 using TrainingProgramManager.Api.Entities;
@@ -28,6 +29,27 @@ namespace TrainingProgramManager.Api.Services.Workshops
 
         public Task<IReadOnlyCollection<WorkshopListItemResponse>> GetAllAsync(int? eventId = null) =>
             _workshopRepository.GetAllAsync(eventId);
+
+        // EN: The database is queried only on a cache miss; the cached value is the DTO collection (an empty list is a valid, cached result), and it expires after two minutes.
+        // HU: Az adatbázis lekérdezése csak cache miss esetén történik; a gyorsítótárazott érték a DTO gyűjtemény (az üres lista érvényes, gyorsítótárazott eredmény), és két perc után lejár.
+        public async Task<IReadOnlyCollection<WorkshopListItemResponse>> GetPublicListAsync()
+        {
+            var workshops = await _memoryCache.GetOrCreateAsync(
+                CacheKeys.PublicWorkshops,
+                async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+
+                    var result = await _workshopRepository.GetPublicListAsync();
+
+                    _logger.LogInformation(
+                        "Public workshop list loaded from database and cached.");
+
+                    return result;
+                });
+
+            return workshops ?? [];
+        }
 
         // EN: The current user id is resolved here from the validated JWT, so a caller can never ask for another Organizer's workshops.
         // HU: Az aktuális felhasználó azonosítóját itt a validált JWT-ből határozzuk meg, így a hívó soha nem kérheti másik szervező workshopjait.

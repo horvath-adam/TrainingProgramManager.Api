@@ -26,6 +26,18 @@ namespace TrainingProgramManager.Api.Controllers
             return Ok(workshops);
         }
 
+        // EN: The public list is explicitly anonymous and contains no owner-specific data; the literal "public" segment does not clash with the {id:int} route.
+        // HU: A publikus lista kifejezetten névtelen, és nem tartalmaz tulajdonos-specifikus adatot; a "public" szegmens nem ütközik a {id:int} útvonallal.
+        [AllowAnonymous]
+        [HttpGet("public")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<WorkshopListItemResponse>>> GetPublic()
+        {
+            var workshops = await _workshopService.GetPublicListAsync();
+
+            return Ok(workshops);
+        }
+
         // EN: Only Organizers own workshops, so only the Organizer role may list "my" workshops. The literal "mine" segment does not clash with the {id:int} route.
         // HU: Csak a szervezők birtokolnak workshopokat, ezért csak az Organizer szerepkör listázhatja a "sajátjait". A "mine" szegmens nem ütközik a {id:int} útvonallal.
         [Authorize(Roles = ApplicationRoles.Organizer)]
