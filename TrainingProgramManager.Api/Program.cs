@@ -1,8 +1,10 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using TrainingProgramManager.Api.Data;
 using TrainingProgramManager.Api.Data.Seed;
 using TrainingProgramManager.Api.Entities;
@@ -16,7 +18,42 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    // EN: Declares the HTTP Bearer (JWT) security scheme in the OpenAPI document, so Swagger UI shows the Authorize button.
+    // HU: Deklarálja a HTTP Bearer (JWT) biztonsági sémát az OpenAPI dokumentumban, így a Swagger UI megjeleníti az Authorize gombot.
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT"
+        };
+
+        return Task.CompletedTask;
+    });
+
+    // EN: The security requirement is added only to operations whose endpoint metadata contains [Authorize] (controller or action level) and no [AllowAnonymous].
+    // HU: A biztonsági követelmény csak azokhoz a műveletekhez kerül, amelyek endpoint metaadatában szerepel [Authorize] (controller vagy action szinten), és nincs [AllowAnonymous].
+    options.AddOperationTransformer((operation, context, cancellationToken) =>
+    {
+        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+
+        if (metadata.OfType<IAuthorizeData>().Any() && !metadata.OfType<IAllowAnonymous>().Any())
+        {
+            operation.Security ??= new List<OpenApiSecurityRequirement>();
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = new List<string>()
+            });
+        }
+
+        return Task.CompletedTask;
+    });
+});
 
 // EN: Registers the services that produce standard RFC 9457 ProblemDetails responses.
 // HU: Regisztrálja a szabványos RFC 9457 ProblemDetails válaszokat előállító szolgáltatásokat.
@@ -37,7 +74,10 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Password.RequireNonAlphanumeric = false;
     })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<TrainingProgramDbContext>();
+    .AddEntityFrameworkStores<TrainingProgramDbContext>()
+    // EN: AddIdentityCore registers no token providers; the educational DevController password reset needs the default ones to create password reset tokens.
+    // HU: Az AddIdentityCore nem regisztrál token providereket; az oktatási DevController jelszó-visszaállításához az alapértelmezettekre van szükség a reset tokenek létrehozásához.
+    .AddDefaultTokenProviders();
 
 // EN: JWT bearer is the default authentication scheme; incoming tokens are validated against the Jwt configuration section (teaching setup, not production).
 // HU: A JWT bearer az alapértelmezett hitelesítési séma; a bejövő tokenek ellenőrzése a Jwt konfigurációs szakasz alapján történik (oktatási beállítás, nem éles).
